@@ -1,0 +1,12 @@
+# Build output
+/build/
+
+# Test artifacts (PNG/CSV exports land next to the test binary)
+viz_*
+
+# Editor / OS
+.vscode/
+.idea/
+*.user
+Thumbs.db
+.DS_Store
