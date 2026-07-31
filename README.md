@@ -1,15 +1,41 @@
 # EAFAR
 
-**Event-Driven Asynchronous Fuzzy Automata Runtime** — a C++23 library for
-simulation of **large sparse worlds**. The core principle:
+[![C++23](https://img.shields.io/badge/language-C%2B%2B23-blue)]()
+[![CMake](https://img.shields.io/badge/build-CMake-005F73)]()
+[![Tests](https://img.shields.io/badge/tests-72%2B%20green-brightgreen)]()
+[![License](https://img.shields.io/badge/license-MIT--pending-yellow)]()
+[![Paradigm](https://img.shields.io/badge/paradigm-sparse--world--simulation-orange)]()
 
-> The world is not updated wholesale — only regions with changes are.
+> **EAFAR** — Event-Driven Asynchronous Fuzzy Automata Runtime. A C++23 library and **paradigm** for simulating large sparse worlds where only changed regions wake up.
 
-Everything is a field (structure-of-arrays). No entities, no per-object
-components: state lives in typed spatial fields, and behavior is defined by
-automata that read and write those fields.
+## About
 
-## Paradigm, not just a library
+EAFAR is both a C++23 library and a **design paradigm** for simulation systems. Its three core principles generalize far beyond spatial simulation:
+
+| Principle | Meaning | EAFAR mechanism |
+|---|---|---|
+| **Everything is a field** (SoA) | State lives in typed columnar fields, not per-object components | 6 SoA float fields (Temperature, Humidity, Energy, Radiation, Population, Corruption) |
+| **Update only what changed** | Inactive regions sleep; only dirty regions step | 32×32 regions with idle aging, deterministic ascending-id iteration |
+| **Behavior = automata + events + fuzziness** | Cascades, async clocks, smooth membership transitions | `EventQueue` → `RegionScheduler` → `AutomatonManager` → `FuzzyState` → `DiffusionEngine` |
+
+### The key insight: sparsity is free
+
+Classical grid simulations update a 4096×4096 world every tick — 16.8M cells of wasted work. EAFAR's region scheduler sleeps dormant regions with ~3000× speedup, and tick cost stays flat as the world grows (active set drives cost, not world size).
+
+### Generalization layers (built on the core)
+
+| Domain instantiation | What maps to | EAFAR core building block |
+|---|---|---|
+| **Spatial simulation** | the original target | all of the above |
+| **GUI / UI** | dirty-region rendering = region scheduler; undo = snapshot/rollback; UI tests = replay | `WorldSnapshot`, `EventQueue` |
+| **Database** (→ EAFAR-DB) | columnar SoA storage, sparse pages = sleeping regions, materialized views = automata, transactions = snapshot/rollback, audit = replay | `FieldMap`, `Snapshot` + EAFAR-DB layer |
+| **Games** | sparse open worlds (most of map sleeps), deterministic lockstep (same seed → same state), event cascades as game logic | all of the above, `RNG` for determinism |
+
+The core library is **domain-free** — no GUI, no DB engine, no game logic. Those are *layers* built on the core.
+
+### Topics / tags
+
+`eafar` · `simulation` · `sparse-world` · `soa` · `event-driven` · `fuzzy-logic` · `automata` · `deterministic-replay` · `snapshot-rollback` · `region-scheduler` · `diffusion` · `c++23` · `cmake` · `game-engine` · `paradigm` · `sparse` · `sleeping-regions` · `field-of-arrays` · `determinism` · `reproducibility`
 
 EAFAR is a **paradigm** — a new way to build systems, not only a simulator:
 
