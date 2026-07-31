@@ -129,4 +129,4 @@ lives in automata you write against the field API.
 
 ## License
 
-MIT (pending).
+[Apache 2.0](LICENSE) — see LICENSE file.
