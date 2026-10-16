@@ -5,6 +5,8 @@
 [![Tests](https://img.shields.io/badge/tests-72%2B%20green-brightgreen)]()
 [![License](https://img.shields.io/badge/license-Apache--2.0-red)]()
 [![Paradigm](https://img.shields.io/badge/paradigm-sparse--world--simulation-orange)]()
+[![Release](https://img.shields.io/github/v/release/kostyk348/eafar?sort=semver&color=blue)](https://github.com/kostyk348/eafar/releases)
+[![Last commit](https://img.shields.io/github/last-commit/kostyk348/eafar?branch=main)](https://github.com/kostyk348/eafar/commits/main)
 
 > **EAFAR** — Event-Driven Asynchronous Fuzzy Automata Runtime. A C++23 library and **paradigm** for simulating large sparse worlds where only changed regions wake up.
 
