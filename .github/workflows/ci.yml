@@ -1,0 +1,15 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Configure (benchmarks excluded: they do not compile with GCC)"
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DEAFAR_BUILD_BENCH=OFF
+      - name: Build
+        run: cmake --build build -j
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
