@@ -1,0 +1,21 @@
+[package]
+name = "eafar"
+version = "1.0.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Event-Driven Asynchronous Fuzzy Automata Runtime — Rust port"
+repository = "https://github.com/kostyk348/eafar"
+readme = "README.md"
+keywords = ["simulation", "fuzzy-logic", "event-driven", "cellular-automata", "ecs"]
+categories = ["simulation", "data-structures"]
+
+# EAFAR is intentionally dependency-free. The C++ original builds with no
+# third-party libraries and the same holds here: determinism and auditability
+# are design goals, and the dependency graph must stay empty.
+[dependencies]
+
+[dev-dependencies]
+
+[[bin]]
+name = "eafar-bench"
+path = "src/bin/eafar-bench.rs"
