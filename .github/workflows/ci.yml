@@ -7,9 +7,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: "Configure (benchmarks excluded: they do not compile with GCC)"
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DEAFAR_BUILD_BENCH=OFF
-      - name: Build
-        run: cmake --build build -j
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build (Cargo.lock is committed and dependency-free, so --locked applies)
+        run: cargo build --all-targets --locked
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: cargo test
+  cross-platform:
+    # Non-blocking portability check: the crate is std-only, so it should
+    # compile everywhere; failures here are reported but do not gate.
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check --all-targets
