@@ -9,6 +9,11 @@
 
 [English](README.md) · [**Русский**](README.ru.md)
 
+[![CI](https://github.com/kostyk348/eafar/actions/workflows/ci.yml/badge.svg)](https://github.com/kostyk348/eafar/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/kostyk348/eafar?sort=semver&color=blue)](https://github.com/kostyk348/eafar/releases)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green)](https://github.com/kostyk348/eafar/blob/main/LICENSE)
+![Rust](https://img.shields.io/badge/rust-stable-orange)
+
 ---
 
 ## Что такое EAFAR?
