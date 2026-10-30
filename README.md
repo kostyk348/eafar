@@ -1,134 +1,142 @@
 # EAFAR
 
-[![C++23](https://img.shields.io/badge/language-C%2B%2B23-blue)]()
-[![CMake](https://img.shields.io/badge/build-CMake-005F73)]()
-[![Tests](https://img.shields.io/badge/tests-72%2B%20green-brightgreen)]()
-[![License](https://img.shields.io/badge/license-Apache--2.0-red)]()
-[![Paradigm](https://img.shields.io/badge/paradigm-sparse--world--simulation-orange)]()
-[![Release](https://img.shields.io/github/v/release/kostyk348/eafar?sort=semver&color=blue)](https://github.com/kostyk348/eafar/releases)
-[![Last commit](https://img.shields.io/github/last-commit/kostyk348/eafar?branch=main)](https://github.com/kostyk348/eafar/commits/main)
+### Update only what changed.
 
-> **EAFAR** — Event-Driven Asynchronous Fuzzy Automata Runtime. A C++23 library and **paradigm** for simulating large sparse worlds where only changed regions wake up.
+**EAFAR — Event-Driven Asynchronous Fuzzy Automata Runtime — a zero-dependency Rust library and
+a design paradigm for large sparse worlds: state lives in SoA fields, only changed regions wake
+up, behavior is automata + events + fuzziness, and runs are bit-exact reproducible artifacts.**
 
-## About
+[**English**](README.md) · [Русский](README.ru.md)
 
-EAFAR is both a C++23 library and a **design paradigm** for simulation systems. Its three core principles generalize far beyond spatial simulation:
+---
+
+## What is EAFAR?
+
+Three principles, one small crate, no dependencies:
 
 | Principle | Meaning | EAFAR mechanism |
-|---|---|---|
-| **Everything is a field** (SoA) | State lives in typed columnar fields, not per-object components | 6 SoA float fields (Temperature, Humidity, Energy, Radiation, Population, Corruption) |
+| --- | --- | --- |
+| **Everything is a field** (SoA) | State lives in typed columnar fields, not per-object components | 6 SoA `f32` fields (Temperature, Humidity, Energy, Radiation, Population, Corruption) |
 | **Update only what changed** | Inactive regions sleep; only dirty regions step | 32×32 regions with idle aging, deterministic ascending-id iteration |
 | **Behavior = automata + events + fuzziness** | Cascades, async clocks, smooth membership transitions | `EventQueue` → `RegionScheduler` → `AutomatonManager` → `FuzzyState` → `DiffusionEngine` |
 
 ### The key insight: sparsity is free
 
-Classical grid simulations update a 4096×4096 world every tick — 16.8M cells of wasted work. EAFAR's region scheduler sleeps dormant regions with ~3000× speedup, and tick cost stays flat as the world grows (active set drives cost, not world size).
+Classical grid simulations update a 4096×4096 world every tick — 16.8M cells of wasted work.
+EAFAR's region scheduler sleeps dormant regions; the tick cost stays flat as the world grows,
+because the **active set** drives the cost, not the world size. Measured with the shipped bench
+(`cargo run --release --bin eafar-bench`):
 
-### Generalization layers (built on the core)
+| world | active regions | full update | region tick | speedup |
+| --- | --- | --- | --- | --- |
+| 4096×4096 | 16 / 16 384 (0.1%) | 3018.8 µs/tick | 6.3 µs/tick | **478×** |
+| 2048×2048 | 16 / 4 096 | 722.4 µs/tick | 6.2 µs/tick | **117×** |
 
-| Domain instantiation | What maps to | EAFAR core building block |
-|---|---|---|
-| **Spatial simulation** | the original target | all of the above |
-| **GUI / UI** | dirty-region rendering = region scheduler; undo = snapshot/rollback; UI tests = replay | `WorldSnapshot`, `EventQueue` |
-| **Database** (→ EAFAR-DB) | columnar SoA storage, sparse pages = sleeping regions, materialized views = automata, transactions = snapshot/rollback, audit = replay | `FieldMap`, `Snapshot` + EAFAR-DB layer |
-| **Games** | sparse open worlds (most of map sleeps), deterministic lockstep (same seed → same state), event cascades as game logic | all of the above, `RNG` for determinism |
-
-The core library is **domain-free** — no GUI, no DB engine, no game logic. Those are *layers* built on the core.
-
-### Topics / tags
-
-`eafar` · `simulation` · `sparse-world` · `soa` · `event-driven` · `fuzzy-logic` · `automata` · `deterministic-replay` · `snapshot-rollback` · `region-scheduler` · `diffusion` · `c++23` · `cmake` · `game-engine` · `paradigm` · `sparse` · `sleeping-regions` · `field-of-arrays` · `determinism` · `reproducibility`
-
-EAFAR is a **paradigm** — a new way to build systems, not only a simulator:
-
-1. **Everything is a field.** State lives in typed, structured fields (SoA),
-   separated from behavior. Data and logic are decoupled by design.
-2. **Update only what changed.** The world is never recomputed wholesale —
-   only regions with changes wake up (dirty-region thinking).
-3. **Behavior is automata + events + fuzziness.** Cascades, asynchronous
-   clocks, smooth membership transitions, determinism, and replay.
-
-These three principles generalize beyond spatial simulation. The library is
-the raw foundation; domain instantiations are built on top of it:
-
-| Layer | Paradigm application |
-|---|---|
-| **Spatial simulation** | the original target — sparse worlds, event cascades |
-| **GUI** | dirty-region rendering = region scheduler; UI state = fields; undo = snapshot/rollback; UI tests = deterministic replay |
-| **Database** | columnar (SoA) storage, sparse pages = sleeping regions, **materialized views as automata** (recomputed only when source fields change), transactions = snapshot/rollback, audit = replay |
-| **Games** | sparse open worlds (most of the map sleeps), deterministic lockstep networking (same seed → same state), event cascades as game logic |
-
-The core library stays domain-free — no GUI, no DB engine, no game logic
-inside the runtime. Those are *layers* built on the core, each an
-instantiation of the paradigm.
-
-## Why it exists
-
-Classical grid simulations update the whole world every tick. In a 4096×4096
-world with most regions dormant, that is ~16.8M cells of wasted work per tick.
-EAFAR's region scheduler sleeps inactive regions and only steps regions that
-have pending events or active automata — with a measured **~3000× speedup**
-on a realistic sparse workload, and a tick cost that stays flat as the world
-grows (the active set, not the world size, drives the cost).
+| The sparse world (outlined = awake) | Tests + bench (real output) |
+| --- | --- |
+| ![heatmap](assets/promo/heatmap.png) | ![bench](assets/promo/bench.png) |
 
 ## Building blocks (S1–S10)
 
-| Module | Header | What it does |
-|---|---|---|
-| S1 FieldMap | `field_map.hpp` | 6 SoA float fields (Temperature, Humidity, Energy, Radiation, Population, Corruption), bounded access |
-| S2 EventQueue | `event_queue.hpp` | FIFO queue, per-type handlers, cascades (Lightning → Fire → Smoke → Plants), seq numbers |
-| S3 RegionScheduler | `region_scheduler.hpp` | 32×32 regions, sleep/wake with idle aging, deterministic ascending-id iteration |
-| S4 AutomatonManager | `automaton.hpp` | Asynchronous automata, per-automaton period (Fire@60Hz … Evolution@1h) |
-| S5 FuzzyState | `fuzzy.hpp` | Membership functions (step/ramp/triangle/bell) — swap behavior without editing code |
-| S6 DependencyGraph | `dependency.hpp` | Declares automaton→field access, structural validation, no automaton→automaton edges |
-| S7 DiffusionEngine | `diffusion.hpp` | Single engine, per-process rules (kernel/rate/decay/ambient), cross-boundary reads, energy conservation |
-| S8 WorldSnapshot | `snapshot.hpp` | Bit-exact capture/restore — NaN patterns and -0.0 survive rollback |
-| S9 RNG | `rng.hpp` | SplitMix64, deterministic replay: same seed → same history (cross-validated against an independent Python implementation) |
-| S10 Visualizer | `visualizer.hpp` | Dependency-free PNG/CSV heatmap export, region overlay, sleeping-cell stats |
+| Module | File | What it does |
+| --- | --- | --- |
+| S1 `FieldMap` | `src/field_map.rs` | 6 SoA float fields, bounded access, `bitwise_equal` |
+| S2 `EventQueue` | `src/event_queue.rs` | FIFO queue, per-type handlers, cascades (Lightning → Fire → Smoke → Plants), seq numbers |
+| S3 `RegionScheduler` | `src/region_scheduler.rs` | 32×32 regions, sleep/wake with idle aging, deterministic ascending-id iteration |
+| S4 `AutomatonManager` | `src/automaton.rs` | Asynchronous automata, per-automaton period (Fire@60Hz … Evolution@1h) |
+| S5 `FuzzyState` | `src/fuzzy.rs` | Membership functions (step/ramp/triangle/bell) — swap behavior without editing code |
+| S6 `DependencyGraph` | `src/dependency.rs` | Declares automaton→field access, structural validation, no automaton→automaton edges |
+| S7 `DiffusionEngine` | `src/diffusion.rs` | Single engine, per-process rules (kernel/rate/decay/ambient), cross-boundary reads |
+| S8 `WorldSnapshot` | `src/snapshot.rs` | **Bit-exact** capture/restore — NaN patterns and `-0.0` survive rollback (`f32::to_bits`) |
+| S9 `SplitMix64` | `src/rng.rs` | Deterministic replay: same seed → same history (bit-identical to the C++ original) |
+| S10 `Visualizer` | `src/visualizer.rs` | Dependency-free PNG/CSV heatmap export, region overlay, sleeping-cell stats |
+
+```
+use eafar::prelude::*;                     // everything above, one import
+```
 
 ## Determinism
 
-Same seed + same event sequence → bit-identical history and world state.
-Snapshots restore bit-exact (including NaN bit patterns). Replay after
-rollback reproduces the identical final state. This is what makes EAFAR
-suitable for scientific use: runs are reproducible artifacts.
+Same seed + same event sequence → **bit-identical** history and world state. Snapshots restore
+bit-exact (including NaN bit patterns). Replay after rollback reproduces the identical final
+state. This is what makes EAFAR suitable for scientific use: runs are reproducible artifacts.
+The port is tested against the original: SplitMix64 reference vectors and the C++ contract
+suite are part of the 78 Rust tests.
 
-## Build
+## Quick start
 
-Requires a C++23 compiler (GCC 13+/Clang 16+/MSVC 17.6+) and CMake ≥ 3.20.
-
-```sh
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-ctest --test-dir build --output-on-failure
+```
+cargo build --release
+cargo test                                        # 78 contract tests
+cargo run --release --example heatmap heat.png    # the sparse-world picture above
+cargo run --release --bin eafar-bench             # the numbers above
 ```
 
-Or, on Windows with MinGW:
+```rust
+use eafar::prelude::*;
 
-```powershell
-./build.ps1
+let mut world = FieldMap::new(1024, 1024);
+let mut sched = RegionScheduler::new(1024, 1024, 32)?;
+sched.wake(500, 500)?;                            // only this region will step
 ```
 
-## Tests
+## Generalization layers (built on the core)
 
-72+ contract tests, one per spec scenario criterion, all green
-(`eafar_tests.exe`). Benchmarks in `benchmarks/bench_main.cpp`
-(`eafar_bench.exe`).
+| Domain instantiation | What maps to | Core building block |
+| --- | --- | --- |
+| **Spatial simulation** | the original target | all of the above |
+| **GUI / UI** | dirty-region rendering = region scheduler; undo = snapshot/rollback; UI tests = replay | `WorldSnapshot`, `EventQueue` |
+| **Database** (→ EAFAR-DB) | columnar SoA storage, sparse pages = sleeping regions, materialized views = automata, transactions = snapshot/rollback, audit = replay | `FieldMap`, `WorldSnapshot` |
+| **Games** | sparse open worlds (most of the map sleeps), deterministic lockstep (same seed → same state), event cascades as game logic | all of the above, `SplitMix64` |
+
+The core library is **domain-free** — no GUI, no DB engine, no game logic. Those are *layers*
+built on the core.
+
+## From C++ to Rust
+
+EAFAR v0.1 was a C++23 library (still in git history). v1.0.0 is the same runtime as a pure
+Rust crate: edition 2021, **zero dependencies**, `#![forbid(unsafe_code)]`, `Result` instead of
+exceptions, `BTreeSet` for the deterministic iteration order the C++ code guaranteed by
+convention. The contract suite was ported 1:1 and extended (78 tests vs 72+), including
+bit-exact rollback and SplitMix64 reference vectors.
 
 ## Scope
 
-**In (core library):** spatial state, event-driven scheduling, async automata,
-fuzzy logic, diffusion, dependency analysis, deterministic replay,
-visualization exports.
+**In (core library):** spatial state, event-driven scheduling, async automata, fuzzy logic,
+diffusion, dependency analysis, deterministic replay, visualization exports.
 
-**Out of the core (by design):** NPCs, inventory, ECS, game logic, AI,
-scripting, GUI, OpenGL — none of this ships *inside* the runtime. The core is
-domain-free so that it can serve any domain. GUI, databases, and game logic
-are **layers built on the core** (see Paradigm above), not library code.
+**Out of the core (by design):** NPCs, inventory, ECS, game logic, AI, scripting, GUI, OpenGL —
+none of this ships *inside* the runtime. The core is domain-free so that it can serve any
+domain; GUI, databases, and game logic are layers built on the core.
 
-EAFAR is a simulation *runtime* and a paradigm substrate — application logic
-lives in automata you write against the field API.
+## Releases
+
+| Version | What | When |
+| --- | --- | --- |
+| **v1.0.0** | Rust rewrite: zero-dependency crate, 78 tests, bench + CI ported; C++ superseded | 2026-10-30 |
+| **v0.1.0** | C++23 first snapshot: S1–S10, 72+ contract tests, CMake + MinGW script | 2026-10-16 |
+
+## Limitations (honest ones)
+
+See [LIMITATIONS.md](LIMITATIONS.md). Notably: single-threaded ticks, `f32` fields with
+strict float ordering (no fast-math shortcuts), stored-deflate PNG export (uncompressed), and
+a fixed 8-event type set in `EventType`.
+
+## Roadmap
+
+* ✅ S1–S10 core (C++ → Rust)
+* ⬜ EAFAR-DB: columnar storage layer with sparse pages and materialized views
+* ⬜ Optional parallel region ticks (behind a feature flag — the core stays dependency-free)
+* ⬜ Deterministic networked lockstep helper (seed + event log exchange)
+* ⬜ GUI layer demo: dirty-region rendering on top of `RegionScheduler`
+
+## Contributing
+
+PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Changes are tracked in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-[Apache 2.0](LICENSE) — see LICENSE file.
+Apache-2.0 — see [LICENSE](LICENSE).
+
+**EAFAR** — the world sleeps; the change wakes it.
