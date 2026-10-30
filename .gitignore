@@ -1,8 +1,5 @@
-# Build output
-/build/
-
-# Test artifacts (PNG/CSV exports land next to the test binary)
-viz_*
+# Rust build output
+/target/
 
 # Editor / OS
 .vscode/
