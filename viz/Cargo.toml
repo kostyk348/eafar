@@ -1,0 +1,25 @@
+[package]
+name = "viz"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Interactive egui visualizer for the EAFAR sparse event-driven cellular automaton engine"
+
+[dependencies]
+eafar = { path = ".." }
+eframe = { version = "0.29", optional = true, default-features = false, features = [
+    "glow",
+    "x11",
+    "default_fonts",
+] }
+
+[features]
+default = []
+# The egui window itself. Requires cargo >= 1.85 (parts of the dependency
+# tree use edition 2024). The simulation/rewind/stats logic in this crate
+# builds and tests without it.
+gui = ["dep:eframe"]
+
+[[bin]]
+name = "eafar-viz"
+path = "src/main.rs"

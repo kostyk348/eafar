@@ -8,12 +8,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Build (Cargo.lock is committed and dependency-free, so --locked applies)
+      - name: Build (Cargo.lock is committed and covers the workspace, so --locked applies)
         run: cargo build --all-targets --locked
       - name: Test
-        run: cargo test
+        run: cargo test --locked
+  viz-check:
+    # The egui/eframe dependency tree of the `viz` crate contains
+    # edition-2024 manifests and needs cargo >= 1.85. This job checks the
+    # GUI on the STABLE toolchain (with the X11/wayland build inputs) and
+    # the GUI-independent logic everywhere. Non-blocking by policy: the
+    # core crate is dependency-free and must never be gated on egui.
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install X11/wayland dev packages (eframe build inputs)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev
+      - name: Check viz logic (no GUI deps)
+        run: cargo check -p viz --locked
+      - name: Test viz logic
+        run: cargo test -p viz --locked
+      - name: Check viz GUI (egui/eframe)
+        run: cargo check -p viz --features gui --locked
   cross-platform:
-    # Non-blocking portability check: the crate is std-only, so it should
+    # Non-blocking portability check: the core crate is std-only, so it should
     # compile everywhere; failures here are reported but do not gate.
     continue-on-error: true
     strategy:
@@ -24,4 +45,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo check --all-targets
+      - run: cargo check --all-targets --locked

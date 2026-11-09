@@ -15,3 +15,7 @@ pub use crate::region_scheduler::{RegionScheduler, RegionWork};
 pub use crate::rng::SplitMix64;
 pub use crate::snapshot::WorldSnapshot;
 pub use crate::visualizer::Visualizer;
+pub use crate::workload::{
+    hash_field, seed_world, DenseSession, GenerationStats, SessionCheckpoint, SparseSession,
+    Workload,
+};

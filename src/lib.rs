@@ -17,6 +17,7 @@
 //! | [`snapshot`] | S8: snapshot / rollback | `include/eafar/snapshot.hpp` |
 //! | [`rng`] | S9: deterministic PRNG | `include/eafar/rng.hpp` |
 //! | [`visualizer`] | S10: PNG/CSV export | `include/eafar/visualizer.hpp` |
+//! | [`workload`] | reference CA workloads: dense vs sparse drivers | — (audit 2026) |
 //!
 //! ## Porting rules
 //!
@@ -46,3 +47,4 @@ pub mod region_scheduler;
 pub mod rng;
 pub mod snapshot;
 pub mod visualizer;
+pub mod workload;
