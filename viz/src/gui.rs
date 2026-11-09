@@ -47,10 +47,7 @@ impl VizApp {
                 .expect("valid demo session parameters");
         let texture = cc.egui_ctx.load_texture(
             "world",
-            egui::ColorImage::new(
-                [WORLD as usize, WORLD as usize],
-                vec![Color32::BLACK; (WORLD * WORLD) as usize],
-            ),
+            egui::ColorImage::new([WORLD as usize, WORLD as usize], Color32::BLACK),
             egui::TextureOptions::NEAREST,
         );
         VizApp {
@@ -167,8 +164,13 @@ impl VizApp {
                 pixels.push(color);
             }
         }
-        self.texture
-            .set(egui::ColorImage::new([w, h], pixels), egui::TextureOptions::NEAREST);
+        self.texture.set(
+            egui::ColorImage {
+                size: [w, h],
+                pixels,
+            },
+            egui::TextureOptions::NEAREST,
+        );
     }
 
     fn controls_ui(&mut self, ui: &mut egui::Ui) {
