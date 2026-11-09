@@ -16,6 +16,10 @@ categories = ["simulation", "data-structures"]
 
 [dev-dependencies]
 
+[workspace]
+members = ["viz"]
+resolver = "2"
+
 [[bin]]
 name = "eafar-bench"
 path = "src/bin/eafar-bench.rs"
