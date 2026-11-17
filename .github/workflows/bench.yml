@@ -1,0 +1,17 @@
+name: Benchmarks
+
+# Числа из README должны воспроизводиться: пример запускается в CI, а не только на машине автора.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  sparse-vs-dense:
+    name: sparse vs dense example
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run the sparse cost measurement
+        run: cargo run --release --example sparse_vs_dense

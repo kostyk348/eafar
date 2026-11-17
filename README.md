@@ -26,6 +26,38 @@ up, behavior is automata + events + fuzziness, and runs are bit-exact reproducib
 
 ---
 
+## Sparse cost, measured
+
+The claim of the whole paradigm is "only changed regions wake up". Here is the measurement
+(`cargo run --release --example sparse_vs_dense`, Intel Core i3-1115G4, Windows, Rust 1.97):
+
+**One active region, the world grows 256× (65 536 → 16 777 216 cells):**
+
+| World | Cells | µs per tick |
+|---|---|---|
+| 256×256 | 65 536 | 0.32 |
+| 512×512 | 262 144 | 0.31 |
+| 1024×1024 | 1 048 576 | 0.31 |
+| 2048×2048 | 4 194 304 | 0.29 |
+| 4096×4096 | 16 777 216 | 0.30 |
+
+The tick cost is flat: 256× more field does not cost more per tick while the activity stays put.
+
+**Fixed 1024×1024 world, the number of active regions grows:**
+
+| Active regions | Cells inside them | µs per tick |
+|---|---|---|
+| 1 | 1 024 | 0.15 |
+| 4 | 4 096 | 0.15 |
+| 16 | 16 384 | 0.29 |
+| 64 | 65 536 | 0.31 |
+| 1024 (all) | 1 048 576 | 0.38 |
+
+Honest reading: the cost follows the number of *active regions*, not the world, and the growth is
+mild because per-region work is a small constant. A fully awake world is ~2.5× one awake region,
+which is the price of the region bookkeeping, not of the fields.
+
+
 ## What is EAFAR?
 
 Three principles, one small crate, no dependencies:
