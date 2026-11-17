@@ -53,6 +53,11 @@ The tick cost is flat: 256× more field does not cost more per tick while the ac
 | 64 | 65 536 | 0.31 |
 | 1024 (all) | 1 048 576 | 0.38 |
 
+The same property is now a regression test (`tests/sparse_cost.rs`): a tick in a 2048×2048 world
+must not cost more than 4× a tick in a 256×256 one, and a fully awake world must be more expensive
+than a single awake region — so if someone reintroduces a full-world scan, the test fails instead
+of the benchmark quietly degrading.
+
 Honest reading: the cost follows the number of *active regions*, not the world, and the growth is
 mild because per-region work is a small constant. A fully awake world is ~2.5× one awake region,
 which is the price of the region bookkeeping, not of the fields.
